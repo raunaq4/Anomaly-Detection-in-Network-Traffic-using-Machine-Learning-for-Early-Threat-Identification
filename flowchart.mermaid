@@ -1,0 +1,70 @@
+graph TD
+    A["Start: Define Problem - Network Intrusion Detection"] --> B{"Load CICIDS2017 Dataset"};
+    B -- Multiple CSVs --> C["Concatenate CSVs into Single DataFrame"];
+    C --> D["Initial Data Cleaning: Strip Column Names, Handle Special Chars, Replace Infinities"];
+    D --> E["Drop Rows with NaN Values"];
+    E --> F["Remove Duplicate Rows"];
+    F --> G["Feature Engineering: Create Binary Label (0: BENIGN, 1: ATTACK)"];
+    G --> H["Separate Features (X) and Target (y)"];
+    H --> I["Identify & Drop Non-Predictive Columns from X"];
+    I --> J["Convert Object-Type Columns in X to Numeric (Coerce Errors)"];
+    J --> K["Impute Remaining NaNs in X using Median"];
+    K --> L["Split Data: 70% Train, 30% Test (Stratified)"];
+    L --> M_Train["Process Training Data"];
+    L --> M_Test["Process Test Data"];
+
+    M_Train --> N["Scale Training Features (X_train) using StandardScaler"];
+    N --> O{"Handle Class Imbalance on X_train, y_train?"};
+    O -- Yes --> P["Apply SMOTE to X_train, y_train -> X_train_resampled, y_train_resampled"];
+    O -- No (Not this path in script) --> Q_skip_smote["Use X_train, y_train directly"];
+    P --> Q["Select Models: Logistic Regression, Decision Tree, Random Forest, KNN"];
+    
+    M_Test --> R["Scale Test Features (X_test) using Fitted Scaler"];
+
+    subgraph Model Training & Initial Evaluation
+        Q --> T1["Train Logistic Regression on Resampled Data"];
+        T1 --> E1["Evaluate on X_test, y_test"];
+        Q --> T2["Train Decision Tree on Resampled Data"];
+        T2 --> E2["Evaluate on X_test, y_test"];
+        Q --> T3["Train Random Forest on Resampled Data"];
+        T3 --> E3["Evaluate on X_test, y_test"];
+        Q --> T4["Train KNN on Resampled Data"];
+        T4 --> E4["Evaluate on X_test, y_test"];
+    end
+
+    E1 --> S["Collect Performance Metrics"];
+    E2 --> S;
+    E3 --> S;
+    E4 --> S;
+    
+    S --> U["Compare Model Performances: Precision, Recall, F1, ROC AUC"];
+    E3 --> V["Extract Feature Importances from Random Forest"];
+    V --> V_Vis["Visualize Top Feature Importances"];
+    S --> W_Vis["Visualize ROC Curves"];
+
+    Q --> X{"Attempt Hyperparameter Tuning (GridSearchCV)?"};
+    X -- Yes --> Y_RF["Tune Random Forest"];
+    Y_RF -- "Failed (Resource Error)" --> Z["Note RF Tuning Failure"];
+    X -- Yes --> Y_LR["Tune Logistic Regression"];
+    Y_LR -- "Failed (Resource Error)" --> Z_LR["Note LR Tuning Failure"];
+    
+    Z --> AA["Final Model Performance Summary (Untuned Models)"];
+    Z_LR --> AA;
+    U --> AA;
+    
+    AA --> BB["Discuss Final Model Selection based on Metrics & Criteria"];
+    BB --> CC["End: Report Findings"];
+
+    %% Style definitions
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;
+    classDef process fill:#e6f2ff,stroke:#007bff,stroke-width:2px;
+    classDef decision fill:#fff0f5,stroke:#c71585,stroke-width:2px;
+    classDef io fill:#e0ffe0,stroke:#28a745,stroke-width:2px;
+    classDef startend fill:#fffacd,stroke:#ff8c00,stroke-width:2px;
+    classDef error fill:#ffe4e1,stroke:#dc3545,stroke-width:2px;
+
+    class A,CC startend;
+    class C,D,E,F,G,H,I,J,K,L,N,P,R,T1,T2,T3,T4,E1,E2,E3,E4,S,U,V,V_Vis,W_Vis,AA,BB process;
+    class B,O,X decision;
+    class Y_RF,Y_LR process;
+    class Z,Z_LR error;
